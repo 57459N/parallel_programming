@@ -9,6 +9,6 @@ include_directories("C:\\Program\ Files\\Microsoft\ MPI"
 
 find_package(MPI REQUIRED)
 
-add_executable(parallel_programming main.cpp 1.1.14.cpp tasks.h)
+add_executable(parallel_programming main.cpp 1.1.14.cpp tasks.h 1.1.5.cpp)
 
 target_link_libraries(parallel_programming PUBLIC MPI::MPI_CXX)
