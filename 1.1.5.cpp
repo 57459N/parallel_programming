@@ -3,6 +3,8 @@
 #include <string>
 #include <cstring>
 
+#include "tasks.h"
+
 using namespace std;
 
 void fromItoJ(int i, int j, std::string message) {

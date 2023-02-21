@@ -67,12 +67,60 @@ void I2J(int source, int dest, const std::string &message) {
     }
 }
 
+void ItoAll(int source) {
+
+    int Size = 0;
+    int Rank = 0;
+    MPI_Status status;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &Size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &Rank);
+
+    if (Rank == 0) {
+        char m[] = "Hello World!";
+        MPI_Request request;
+
+        MPI_Isend(m, strlen(m), MPI_CHAR, (Rank + 1) % Size, 0, MPI_COMM_WORLD, &request);
+        MPI_Isend(m, strlen(m), MPI_CHAR, (Rank - 1 + Size) % Size, 0, MPI_COMM_WORLD, &request);
+        MPI_Wait(&request, &status);
+    } else {
+        char r_message[100];
+
+        MPI_Request requests[2];
+
+        MPI_Irecv(r_message, 100, MPI_CHAR, (Rank + 1) % Size, 0, MPI_COMM_WORLD, &requests[0]);
+        MPI_Irecv(r_message, 100, MPI_CHAR, (Rank - 1 + Size) % Size, 0, MPI_COMM_WORLD, &requests[1]);
+
+        int idx;
+        MPI_Waitany(2, requests, &idx, &status);
+
+
+        char s_message[100];
+        strcpy_s(s_message, r_message);
+
+        if (idx == 0) {
+            MPI_Irecv(r_message, 100, MPI_CHAR, (Rank - 1 + Size) % Size, 0, MPI_COMM_WORLD, &requests[0]);
+            MPI_Isend(s_message, 100, MPI_CHAR, (Rank - 1 + Size) % Size, 0, MPI_COMM_WORLD, &requests[1]);
+        } else {
+            MPI_Irecv(s_message, 100, MPI_CHAR, (Rank + 1) % Size, 0, MPI_COMM_WORLD, &requests[0]);
+            MPI_Isend(r_message, 100, MPI_CHAR, (Rank + 1) % Size, 0, MPI_COMM_WORLD, &requests[1]);
+        }
+
+        MPI_Waitany(2, requests, &idx, &status);
+
+        std::cout << Rank << " > " << r_message << std::endl;
+
+
+    }
+
+}
 
 int main1_1_14(int argc, char **argv) {
 
     MPI_Init(&argc, &argv);
 
-    I2J(0, 4, "asd");
+//    I2J(0, 4, "asd");
+    ItoAll(0);
 
     MPI_Finalize();
 
