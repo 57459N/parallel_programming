@@ -2,10 +2,12 @@
 #include "mpi.h"
 #include "iomanip"
 #include "ostream"
+#include "chrono"
 
 #include "tasks.h"
 
-void with_SendRecv(int root, int n_size, int m_size, int chosen_line, int Rank, int Size, double **matrix_A) {
+void with_SendRecv(int root, int n_size, int m_size, int chosen_line, int Rank, int Size, double **matrix_A,
+                   bool print_b = false) {
     auto *matrix_B = new double[Size * m_size]{};
 
     MPI_Status status;
@@ -21,13 +23,13 @@ void with_SendRecv(int root, int n_size, int m_size, int chosen_line, int Rank, 
         for (int i = 0; i < m_size - Rank; ++i) {
             matrix_B[Rank * m_size + i] = matrix_A[chosen_line][i];
         }
-
-        for (int i = 0; i < Size; ++i) {
-            for (int j = 0; j < m_size; ++j) {
-                std::cout << std::setw(5) << matrix_B[i * m_size + j];
+        if (print_b)
+            for (int i = 0; i < Size; ++i) {
+                for (int j = 0; j < m_size; ++j) {
+                    std::cout << std::setw(5) << matrix_B[i * m_size + j];
+                }
+                std::cout << std::endl;
             }
-            std::cout << std::endl;
-        }
     } else {
         MPI_Send(matrix_A[chosen_line], m_size - Rank, MPI_DOUBLE, root, 0, MPI_COMM_WORLD);
     }
@@ -35,7 +37,8 @@ void with_SendRecv(int root, int n_size, int m_size, int chosen_line, int Rank, 
     delete[] matrix_B;
 }
 
-void with_Gatherv(int root, int n_size, int m_size, int chosen_line, int Rank, int Size, double **matrix_A) {
+void with_Gatherv(int root, int n_size, int m_size, int chosen_line, int Rank, int Size, double **matrix_A,
+                  bool print_b = false) {
     // Matrices and arrays
 
     auto *matrix_B = new double[Size * m_size]{};
@@ -72,7 +75,7 @@ void with_Gatherv(int root, int n_size, int m_size, int chosen_line, int Rank, i
 
     // Receiving
 
-    if (Rank == root) {
+    if (Rank == root && print_b) {
         for (int i = 0; i < Size; ++i) {
             for (int j = 0; j < m_size; ++j) {
                 std::cout << std::setw(5) << matrix_B[i * m_size + j];
@@ -94,8 +97,8 @@ int main1_2_14(int argc, char **argv) {
     // Init
 
     int root = 0;
-    int n_size = 3;
-    int m_size = 3;
+    int n_size = 10000;
+    int m_size = 10000;
     int chosen_line = 1;
 
     MPI_Init(&argc, &argv);
@@ -116,10 +119,39 @@ int main1_2_14(int argc, char **argv) {
         }
     }
 
-    // Execution
 
-    //with_Gatherv(root, n_size, m_size, chosen_line, Rank, Size, matrix_A);
+    // Gatherv benchmark
+
+    if (Rank == root) {
+        std::cout << "Matrix A: " << n_size << "x" << m_size << ". Processes: " << Size << std::endl;
+    }
+
+    auto start_point = std::chrono::high_resolution_clock::now();
+
+    with_Gatherv(root, n_size, m_size, chosen_line, Rank, Size, matrix_A);
+
+    if (Rank == root) {
+        auto end_point = std::chrono::high_resolution_clock::now();
+        auto start = time_point_cast<std::chrono::nanoseconds>(start_point).time_since_epoch().count();
+        auto end = time_point_cast<std::chrono::nanoseconds>(end_point).time_since_epoch().count();
+        std::cout << "Gatherv time: " << (end - start) << " nanoseconds" << std::endl;
+    }
+
+
+    // Send/Recv benchmark
+
+    start_point = std::chrono::high_resolution_clock::now();
+
     with_SendRecv(root, n_size, m_size, chosen_line, Rank, Size, matrix_A);
+
+    if (Rank == root) {
+        auto end_point = std::chrono::high_resolution_clock::now();
+        auto start = time_point_cast<std::chrono::nanoseconds>(start_point).time_since_epoch().count();
+        auto end = time_point_cast<std::chrono::nanoseconds>(end_point).time_since_epoch().count();
+        std::cout << "Send/Recv time: " << (end - start) << " nanoseconds" << std::endl;
+    }
+
+
 
     // Cleanup
 
