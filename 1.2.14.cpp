@@ -50,7 +50,7 @@ void with_Gatherv(int root, int n_size, int m_size, int chosen_line, int Rank, i
 
     auto *array_disp = new int[Size];
     for (int i = 0; i < Size; ++i) {
-        array_disp[i] = i * m_size;
+        array_disp[i] = m_size - i;
     }
 
     // Debugging: showing matrix A
@@ -97,8 +97,8 @@ int main1_2_14(int argc, char **argv) {
     // Init
 
     int root = 0;
-    int n_size = 10000;
-    int m_size = 10000;
+    int n_size = 3;
+    int m_size = 3;
     int chosen_line = 1;
 
     MPI_Init(&argc, &argv);
@@ -128,7 +128,7 @@ int main1_2_14(int argc, char **argv) {
 
     auto start_point = std::chrono::high_resolution_clock::now();
 
-    with_Gatherv(root, n_size, m_size, chosen_line, Rank, Size, matrix_A);
+    with_Gatherv(root, n_size, m_size, chosen_line, Rank, Size, matrix_A, true);
 
     if (Rank == root) {
         auto end_point = std::chrono::high_resolution_clock::now();
@@ -142,7 +142,7 @@ int main1_2_14(int argc, char **argv) {
 
     start_point = std::chrono::high_resolution_clock::now();
 
-    with_SendRecv(root, n_size, m_size, chosen_line, Rank, Size, matrix_A);
+    with_SendRecv(root, n_size, m_size, chosen_line, Rank, Size, matrix_A, true);
 
     if (Rank == root) {
         auto end_point = std::chrono::high_resolution_clock::now();

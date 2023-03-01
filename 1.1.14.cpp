@@ -76,13 +76,15 @@ void ItoAll(int source) {
     MPI_Comm_size(MPI_COMM_WORLD, &Size);
     MPI_Comm_rank(MPI_COMM_WORLD, &Rank);
 
-    if (Rank == 0) {
+    if (Rank == source) {
         char m[] = "Hello World!";
-        MPI_Request request;
+        MPI_Request requests[2];
+        MPI_Status statuses[2];
 
-        MPI_Isend(m, strlen(m), MPI_CHAR, (Rank + 1) % Size, 0, MPI_COMM_WORLD, &request);
-        MPI_Isend(m, strlen(m), MPI_CHAR, (Rank - 1 + Size) % Size, 0, MPI_COMM_WORLD, &request);
-        MPI_Wait(&request, &status);
+        MPI_Isend(m, strlen(m), MPI_CHAR, (Rank + 1) % Size, 0, MPI_COMM_WORLD, &requests[0]);
+        MPI_Isend(m, strlen(m), MPI_CHAR, (Rank - 1 + Size) % Size, 0, MPI_COMM_WORLD, &requests[1]);
+        MPI_Waitall(2, requests, statuses);
+        std::cout << "Source after wait" << std::endl;
     } else {
         char r_message[100];
 
@@ -107,11 +109,12 @@ void ItoAll(int source) {
         }
 
         MPI_Waitany(2, requests, &idx, &status);
+        std::cout << "status : " << "error : " << status.MPI_ERROR << " source : " << status.MPI_SOURCE << std::endl;
 
         std::cout << Rank << " > " << r_message << std::endl;
 
-
     }
+//    std::cout << "ItToAll" << std::endl;
 
 }
 
@@ -121,7 +124,7 @@ int main1_1_14(int argc, char **argv) {
 
 //    I2J(0, 4, "asd");
     ItoAll(0);
-
+    std::cout << " Finalize " << std::endl;
     MPI_Finalize();
 
     return 0;
