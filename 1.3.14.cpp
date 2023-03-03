@@ -30,10 +30,10 @@ void alloc_fill_matrix(T* matrix, int n, int m){
     if (matrix != nullptr)
         throw;
 
-    matrix = new T[n_size * n_size];
-    for (int i = 0; i < n_size; ++i)
-        for (int j = 0; j < n_size; ++j)
-            matrix[i * n_size + j] = rand() % 10;
+    matrix = new T[n * m];
+    for (int i = 0; i < n; ++i)
+        for (int j = 0; j < m; ++j)
+            matrix[i * n + j] = rand() % 10;
 }
 
 int main1_3_14(int argc, char **argv) {
