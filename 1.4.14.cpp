@@ -2,36 +2,35 @@
 #pragma ide diagnostic ignored "openmp-use-default-none"
 
 #include <chrono>
-#include <list>
-#include "vector"
+//#include "vector"
 
 #include "tasks.h"
+//
+//template<typename T>
+//void fill_vector(std::vector<std::vector<T>> &matrix, int n, int m) {
+//
+//    for (int i = 0; i < n; ++i) {
+//        matrix[i].resize(n);
+//        for (int j = 0; j < m; ++j)
+//            matrix[i][j] = rand() % 10;
+//    }
+//}
+//
+//
+//template<typename T>
+//void print_matrix(const std::vector<std::vector<T>> &matrix, int n, int m) {
+//    for (int i = 0; i < n; ++i) {
+//        for (int j = 0; j < m; ++j)
+//            std::cout << std::setw(15) << matrix[i][j];
+//        std::cout << std::endl;
+//    }
+//}
 
 template<typename T>
-void fill_vector(std::vector<std::vector<T>> &matrix, int n, int m) {
-
+void fill_pointer(T **&matrix, int n, int m) {
+    matrix = new T *[n];
     for (int i = 0; i < n; ++i) {
-        matrix[i].resize(n);
-        for (int j = 0; j < m; ++j)
-            matrix[i][j] = rand() % 10;
-    }
-}
-
-
-template<typename T>
-void print_matrix(const std::vector<std::vector<T>> &matrix, int n, int m) {
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < m; ++j)
-            std::cout << std::setw(15) << matrix[i][j];
-        std::cout << std::endl;
-    }
-}
-
-template<typename T>
-void fill_pointer(T **matrix, int n, int m) {
-    matrix = new double *[n];
-    for (int i = 0; i < n; ++i) {
-        matrix[i] = new double[m];
+        matrix[i] = new T[m];
         for (int j = 0; j < m; ++j)
             matrix[i][j] = rand() % 10;
     }
@@ -56,7 +55,7 @@ int main1_4_14(int argc, char **argv) {
     omp_set_num_threads(thread_num);
 
     std::srand(time(nullptr));
-    int n_size = 100;
+    int n_size = 1000;
 
     /*  with srand(0)
         Matrix A:
@@ -99,11 +98,9 @@ int main1_4_14(int argc, char **argv) {
     fill_pointer(matrix_A, n_size, n_size);
 
     auto matrix_C_1 = new double *[n_size];
-    auto matrix_C_2 = new double *[n_size];
 
     for (int i = 0; i < n_size; ++i) {
         matrix_C_1[i] = new double[n_size]{};
-        matrix_C_2[i] = new double[n_size]{};
     }
 
     if (n_size < 10) {
@@ -129,10 +126,9 @@ int main1_4_14(int argc, char **argv) {
                 }
 #pragma omp critical
                 {
-                    matrix_C_2[i][j] = sum;
+                    matrix_C_1[i][j] = sum;
                 };
             }
-
         }
     };
 
@@ -141,23 +137,17 @@ int main1_4_14(int argc, char **argv) {
     auto start = std::chrono::time_point_cast<std::chrono::microseconds>(start_point).time_since_epoch().count();
     auto end = std::chrono::time_point_cast<std::chrono::microseconds>(end_point).time_since_epoch().count();
 
-
     std::cout << (end - start) << " microseconds offset\n";
 
-    bool same = true;
-    for (int i = 0; i < n_size; ++i) {
-        for (int j = 0; j < n_size; ++j)
-            if (matrix_C_1[i][j] != matrix_C_2[i][j]) {
-                same = false;
-                break;
-            }
-        if (!same)
-            break;
-
+    for (int i = 0; i < n_size; ++i){
+        delete[] matrix_A[i];
+        delete[] matrix_B[i];
+        delete[] matrix_C_1[i];
     }
 
-    std::cout << (same ? "same" : "not same") << std::endl;
-
+    delete[] matrix_A;
+    delete[] matrix_B;
+    delete[] matrix_C_1;
 
     return 0;
 }
