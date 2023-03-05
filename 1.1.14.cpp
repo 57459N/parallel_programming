@@ -1,5 +1,4 @@
-#include <iostream>
-#include <mpi.h>
+
 #include <string>
 #include <cstring>
 

@@ -1,6 +1,3 @@
-#include <iostream>
-#include "mpi.h"
-#include "iomanip"
 #include "ostream"
 #include "chrono"
 
