@@ -12,7 +12,7 @@ include_directories("C:\\Program\ Files\\Microsoft\ MPI"
 
 find_package(MPI REQUIRED)
 
-add_executable(parallel_programming main.cpp tasks.h 1.1.14.cpp  1.2.14.cpp 1.3.14.cpp 1.4.14.cpp 1.2.6.cpp 1.2.5.cpp)
+add_executable(parallel_programming main.cpp tasks.h 1.1.14.cpp  1.2.14.cpp 1.3.14.cpp 1.4.14.cpp 1.2.6.cpp 1.2.5.cpp 1.4.14.test.cpp)
 # add_executable(parallel_programming 1.1.5.cpp) # error 139. probably cause of string
 
 target_link_libraries(parallel_programming PUBLIC MPI::MPI_CXX)
