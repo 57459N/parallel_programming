@@ -113,24 +113,18 @@ int main1_4_14(int argc, char **argv) {
 
     auto start_point = std::chrono::high_resolution_clock::now();
 
-#pragma omp parallel
-    {
-        int rank = omp_get_thread_num();
-
-        for (int i = rank; i < n_size; i += thread_num) {
-            for (int j = 0; j < n_size; ++j) {
-                double sum = 0;
-                for (int k = 0; k < n_size; ++k) {
-                    sum += matrix_A[i][k] * matrix_A[k][j];
-                    sum += matrix_B[i][k] * matrix_B[k][j];
-                }
-#pragma omp critical
-                {
-                    matrix_C_1[i][j] = sum;
-                };
+#pragma omp parallel for
+    for (int i = 0; i < n_size; i++) {
+        for (int j = 0; j < n_size; ++j) {
+            double sum = 0;
+            for (int k = 0; k < n_size; ++k) {
+                sum += matrix_A[i][k] * matrix_A[k][j];
+                sum += matrix_B[i][k] * matrix_B[k][j];
             }
+            matrix_C_1[i][j] = sum;
         }
-    };
+    }
+
 
     auto end_point = std::chrono::high_resolution_clock::now();
 
@@ -139,7 +133,7 @@ int main1_4_14(int argc, char **argv) {
 
     std::cout << (end - start) << " microseconds offset\n";
 
-    for (int i = 0; i < n_size; ++i){
+    for (int i = 0; i < n_size; ++i) {
         delete[] matrix_A[i];
         delete[] matrix_B[i];
         delete[] matrix_C_1[i];

@@ -1,3 +1,4 @@
+#include <chrono>
 #include "tasks.h"
 
 template<typename T>
@@ -25,22 +26,20 @@ void print_matrix(T *matrix, int n, int m) {
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < m; ++j)
             std::cout << std::setw(15) << matrix[i * n + j];
-        std::cout << std::endl;
+        std::cout << "\n";
     }
+    std::cout.flush();
 }
 
 template<typename T>
-void alloc_fill_matrix(T* matrix, int n, int m){
+void alloc_fill_matrix(T *matrix, int n, int m) {
     if (matrix != nullptr)
         throw;
 
-    matrix = new T[n * m];
-    for (int i = 0; i < n; ++i)
-        for (int j = 0; j < m; ++j)
-            matrix[i * n + j] = rand() % 10;
+
 }
 
-int main1_3_14(int argc, char **argv) {
+uint64_t main1_3_14(int argc, char **argv) {
     // Init
 
 
@@ -61,92 +60,108 @@ int main1_3_14(int argc, char **argv) {
              92            103            135
      */
 
-    srand(time(nullptr));
+    srand(0); //time(nullptr)
 
     int root = 0;
-    int n_size = 3;
-
-    double* matrix_A = nullptr;
-
-    double* matrix_B = nullptr;
-
-    alloc_fill_matrix(matrix_A, n_size, n_size);
-    alloc_fill_matrix(matrix_B, n_size, n_size);
-
-    std::cout << "Matrix A:\n";
-    print_matrix(matrix_A, n_size, n_size);
-    std::cout << "\nMatrix B:\n";
-    print_matrix(matrix_B, n_size, n_size);
-    std::cout << std::endl;
-
+    int n_size = 500;
 
     MPI_Init(&argc, &argv);
 
     int Size = 0;
     int Rank = 0;
-
-    MPI_Comm_size(MPI_COMM_WORLD, &Size);
     MPI_Comm_rank(MPI_COMM_WORLD, &Rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &Size);
 
 
-    auto matrix_C = new double[n_size * n_size]{};
+    double *matrix_A = nullptr;
+    double *matrix_B = nullptr;
 
-    auto Line = new double[n_size]{};
+    matrix_A = new double[n_size * n_size];
+    for (int i = 0; i < n_size; ++i)
+        for (int j = 0; j < n_size; ++j)
+            matrix_A[i * n_size + j] = rand() % 10;
 
-    if (Rank != root) {
+    matrix_B = new double[n_size * n_size];
+    for (int i = 0; i < n_size; ++i)
+        for (int j = 0; j < n_size; ++j)
+            matrix_B[i * n_size + j] = rand() % 10;
 
-        for (int i = Rank; i < n_size; i += Size) {
 
-            calculate_line(matrix_A, matrix_A, n_size, i, Line);
-            calculate_line(matrix_B, matrix_B, n_size, i, Line, true);
-
-            std::cout << Rank << " sending line " << i << " : ";
-            for (int j = 0; j < n_size; ++j)
-                std::cout << "[" << Line[j] << "]";
-            std::cout << std::endl;
-
-            MPI_Send(Line, n_size, MPI_DOUBLE, root, 0, MPI_COMM_WORLD);
-
-            for (int j = 0; j < n_size; ++j)
-                Line[j] = 0;
-        }
-    } else {
-        // Receiving lines from other processes
-
-        MPI_Status status;
-
-        for (int i = 0; i < n_size; ++i) {
-            int source = i % Size;
-            if (source == 0)
-                continue;
-
-            std::cout << Rank << " (root) receiving line " << i << std::endl;
-            MPI_Recv(&matrix_C[i * n_size], n_size, MPI_DOUBLE, source, 0, MPI_COMM_WORLD, &status);
-            std::cout << Rank << " (root) got line " << i << " : ";
-            for (int j = 0; j < n_size; ++j) {
-                std::cout << "[" << matrix_C[i * n_size + j] << "]";
-            }
-            std::cout << std::endl;
-        }
-
-        // Calculating own lines
-
-        for (int i = root; i < n_size; i += Size) {
-            calculate_line(matrix_A, matrix_A, n_size, i, &matrix_C[i * n_size]);
-            calculate_line(matrix_B, matrix_B, n_size, i, &matrix_C[i * n_size], true);
-        }
-
-        // Output matrix C
-
-        std::cout << "Matrix C:\n";
-        print_matrix(matrix_C, n_size, n_size);
+    if (Rank == root && n_size < 10) {
+        std::cout << "Matrix A:\n";
+        print_matrix(matrix_A, n_size, n_size);
+        std::cout << "\nMatrix B:\n";
+        print_matrix(matrix_B, n_size, n_size);
         std::cout << std::endl;
+    }
+
+
+    double *matrix_C = nullptr;
+    if (Rank == root)
+        matrix_C = new double[n_size * n_size]{};
+
+
+    auto start_point = std::chrono::high_resolution_clock::now();
+
+
+    int div = n_size / Size;
+    int counting_lines = n_size / Size + (Rank >= Size - (n_size % Size));
+
+    auto buffer = new double[n_size * counting_lines]{};
+
+    auto recv_disps = new int[Size];
+    auto recv_counts = new int[Size];
+    for (int i = 0; i < Size; ++i) {
+        // counting displacement
+        int s_minus_mod = Size - (n_size % Size);
+        recv_disps[i] = i * div;
+        if (i > s_minus_mod)
+            recv_disps[i] += i - s_minus_mod;
+        recv_disps[i] *= n_size;
+
+        //counting amount
+        recv_counts[i] = n_size * (n_size / Size + (i >= s_minus_mod));
+    }
+
+    // Calculating buffer
+
+    int start_line = recv_disps[Rank] / n_size;
+    for (int i = start_line; i < start_line + counting_lines; ++i) {
+        for (int j = 0; j < n_size; ++j) {
+            double sum = 0;
+            for (int k = 0; k < n_size; ++k) {
+                sum += matrix_A[i * n_size + k] * matrix_A[k * n_size + j];
+                sum += matrix_B[i * n_size + k] * matrix_B[k * n_size + j];
+            }
+            buffer[(i - start_line) * n_size + j] = sum;
+        }
+    }
+
+    MPI_Gatherv(buffer, recv_counts[Rank], MPI_DOUBLE, matrix_C, recv_counts, recv_disps, MPI_DOUBLE, root,
+                MPI_COMM_WORLD);
+
+    auto end_point = std::chrono::high_resolution_clock::now();
+
+    auto start = std::chrono::time_point_cast<std::chrono::microseconds>(start_point).time_since_epoch().count();
+    auto end = std::chrono::time_point_cast<std::chrono::microseconds>(end_point).time_since_epoch().count();
+
+
+    if (Rank == root) {
+        std::cout << (end - start) << std::endl;
+        if (n_size < 10) {
+            std::cout << "Matrix C:\n";
+            print_matrix(matrix_C, n_size, n_size);
+            std::cout << std::endl;
+        }
     }
 
     delete[] matrix_A;
     delete[] matrix_B;
     delete[] matrix_C;
-    delete[] Line;
+    delete[] recv_disps;
+    delete[] recv_counts;
+
 
     return MPI_Finalize();
+
 }
