@@ -47,7 +47,7 @@ void print_matrix(T **matrix, int n, int m) {
 }
 
 
-int main1_4_14(int argc, char **argv) {
+uint64_t main1_4_14(int argc, char **argv, int n_size) {
 
     // with omp configuration argv[1] is number of threads
 
@@ -55,7 +55,6 @@ int main1_4_14(int argc, char **argv) {
     omp_set_num_threads(thread_num);
 
     std::srand(time(nullptr));
-    int n_size = 1000;
 
     /*  with srand(0)
         Matrix A:
@@ -94,8 +93,19 @@ int main1_4_14(int argc, char **argv) {
     double **matrix_A = nullptr;
     double **matrix_B = nullptr;
 
-    fill_pointer(matrix_B, n_size, n_size);
-    fill_pointer(matrix_A, n_size, n_size);
+    matrix_A = new double *[n_size];
+    for (int i = 0; i < n_size; ++i) {
+        matrix_A[i] = new double[n_size];
+        for (int j = 0; j < n_size; ++j)
+            matrix_A[i][j] = rand() % 10;
+    }
+
+    matrix_B = new double *[n_size];
+    for (int i = 0; i < n_size; ++i) {
+        matrix_B[i] = new double[n_size];
+        for (int j = 0; j < n_size; ++j)
+            matrix_B[i][j] = rand() % 10;
+    }
 
     auto matrix_C_1 = new double *[n_size];
 
@@ -143,7 +153,7 @@ int main1_4_14(int argc, char **argv) {
     delete[] matrix_B;
     delete[] matrix_C_1;
 
-    return 0;
+    return end - start;
 }
 
 #pragma clang diagnostic pop
