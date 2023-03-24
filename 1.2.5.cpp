@@ -28,7 +28,7 @@ int main1_2_5(int argc, char **argv) {
     if (Rank == root)
         matrix_B = new int[Size * m];
 
-    MPI_Gather(&matrix_A[line * n], m, MPI_INT, matrix_B, m, MPI_INT, root, MPI_COMM_WORLD);
+    MPI_Gather(&matrix_A[line * m], m, MPI_INT, matrix_B, m, MPI_INT, root, MPI_COMM_WORLD);
 
     if (Rank == root)
         for (int i = 0; i < Size; i++) {

@@ -3,7 +3,7 @@
 int main1_2_6(int argc, char **argv) {
     int rank;
     int size;
-//
+
     int k = 0;
 
     int *buf = nullptr;
@@ -42,5 +42,5 @@ int main1_2_6(int argc, char **argv) {
 
     delete[] buf;
 
-    MPI_Finalize();
+    return MPI_Finalize();
 }
