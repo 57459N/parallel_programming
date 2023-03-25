@@ -1,5 +1,6 @@
 #include "tasks.h"
 
+
 void print_vector(double *vector, int n) {
     for (int i = 0; i < n; i++) {
         std::cout << vector[i] << " ";
@@ -17,6 +18,7 @@ void print_matrix(double *matrix, int n, int m) {
 int main1_3_10(int argc, char **argv) {
     // Init
 
+    // don't run more processes than n_size
     int n_size = 3;
     int root = 0;
 
