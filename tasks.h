@@ -17,7 +17,11 @@ int main1_2_6(int, char **);
 
 int main1_2_14(int, char **);
 
+int main1_3_5(int , char**);
+
 int main1_3_10(int, char **);
+
+int main1_4_5(int , char**);
 
 uint64_t main1_3_14(int, char **);
 
